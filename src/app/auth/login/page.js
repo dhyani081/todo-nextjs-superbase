@@ -1,40 +1,64 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-export default function SignupPage() {
+export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async () => {
+  const handleLogin = async () => {
     setMsg('');
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setMsg(error.message);
-    } else {
-      setMsg('Signup successful! Check your email inbox for verification link.');
+      console.log('Login response:', { data, error });
+
+     if (error) {
+  setMsg(error.message);
+} else {
+  // after login, check block status from profiles table
+  const { data: userData } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_blocked')
+    .eq('id', userData.user.id)
+    .single();
+
+  if (profile?.is_blocked) {
+    await supabase.auth.signOut();
+    setMsg("Your account is blocked by Admin.");
+    return;
+  }
+
+  setMsg('Login successful! Redirecting...');
+  router.push('/dashboard');
+}
+    } catch (err) {
+      console.error('Login failed (network):', err);
+      setMsg('Network error: failed to reach Supabase.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md p-4">
         <CardHeader>
-          <CardTitle className="text-center text-xl">Create account</CardTitle>
+          <CardTitle className="text-center text-xl">Login</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
@@ -46,7 +70,7 @@ export default function SignupPage() {
 
           <Input
             type="password"
-            placeholder="Password (min 6 chars)"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -59,10 +83,10 @@ export default function SignupPage() {
 
           <Button
             className="w-full"
-            onClick={handleSignup}
+            onClick={handleLogin}
             disabled={loading}
           >
-            {loading ? 'Signing up...' : 'Sign Up'}
+            {loading ? 'Logging in...' : 'Login'}
           </Button>
         </CardContent>
       </Card>
