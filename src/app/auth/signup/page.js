@@ -64,6 +64,13 @@ export default function SignupPage() {
           >
             {loading ? 'Signing up...' : 'Sign Up'}
           </Button>
+
+          <button
+          variant="outline"
+          className='w-full mt-2 text-white'
+          onClick={()=> router.push('/auth/login')}>
+            Login
+          </button>
         </CardContent>
       </Card>
     </div>
