@@ -67,6 +67,7 @@ export default function SignupPage() {
 
           <button
           variant="outline"
+          type='button'
           className='w-full mt-2 text-white'
           onClick={()=> router.push('/auth/login')}>
             Login
